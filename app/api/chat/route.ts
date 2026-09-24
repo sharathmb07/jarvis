@@ -12,6 +12,10 @@ import {
   searchVectorMemory,
 } from "../../lib/vectorMemory";
 
+import {
+  commitAndPush,
+} from "../../tools/gitTools";
+
 import { extractMemories } from "../../lib/memoryExtractor";
 
 import {
@@ -753,6 +757,54 @@ Do not explain the code.
         });
       }
     }
+
+    // ==========================================
+// PUSH TO GITHUB
+// ==========================================
+
+if (
+  /^push to github$/i.test(
+    cleanMessage
+  )
+) {
+  try {
+    const result =
+      await commitAndPush(
+        "Update JARVIS project"
+      );
+
+    saveMessage(
+      "user",
+      cleanMessage
+    );
+
+    const reply =
+      result.output;
+
+    saveMessage(
+      "assistant",
+      reply
+    );
+
+    return NextResponse.json({
+      reply,
+      tool: "commitAndPush",
+      success:
+        result.success,
+    });
+  } catch (error) {
+    console.error(
+      "GITHUB PUSH ERROR:",
+      error
+    );
+
+    return NextResponse.json({
+      reply:
+        "I couldn't push the changes to GitHub.",
+      success: false,
+    });
+  }
+}
 
     // ==========================================
     // NORMAL CHAT
