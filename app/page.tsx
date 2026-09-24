@@ -1,69 +1,284 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+
+type Message = {
+  role: "user" | "assistant";
+  content: string;
+};
 
 export default function Home() {
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: "assistant",
+      content: "Hello. I am JARVIS, your personal AI assistant.",
+    },
+  ]);
+
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function sendMessage() {
+    if (!message.trim() || loading) {
+      return;
+    }
+
+    const userMessage = message.trim();
+
+    // Show user's message on the screen
+    setMessages((previous) => [
+      ...previous,
+      {
+        role: "user",
+        content: userMessage,
+      },
+    ]);
+
+    setMessage("");
+    setLoading(true);
+
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+
+        // IMPORTANT:
+        // The API now expects "message"
+        body: JSON.stringify({
+          message: userMessage,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Something went wrong"
+        );
+      }
+
+      // Show JARVIS response
+      setMessages((previous) => [
+        ...previous,
+        {
+          role: "assistant",
+          content: data.reply,
+        },
+      ]);
+    } catch (error) {
+      console.error("JARVIS ERROR:", error);
+
+      setMessages((previous) => [
+        ...previous,
+        {
+          role: "assistant",
+          content:
+            "Sorry, I couldn't connect to my AI brain. Please make sure Ollama is running.",
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
+    <main
+      style={{
+        minHeight: "100vh",
+        background: "#05070a",
+        color: "white",
+        display: "flex",
+        flexDirection: "column",
+        fontFamily: "Arial, sans-serif",
+      }}
+    >
+      {/* HEADER */}
+      <header
+        style={{
+          padding: "20px 30px",
+          borderBottom: "1px solid #1f2937",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <div>
+          <h1
+            style={{
+              margin: 0,
+              letterSpacing: "6px",
+              fontSize: "28px",
+            }}
+          >
+            J A R V I S
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+
+          <p
+            style={{
+              color: "#6b7280",
+              marginTop: "5px",
+            }}
+          >
+            Personal AI Assistant
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        <div
+          style={{
+            width: "10px",
+            height: "10px",
+            borderRadius: "50%",
+            background: "#22c55e",
+            boxShadow: "0 0 15px #22c55e",
+          }}
+        />
+      </header>
+
+      {/* CHAT */}
+      <section
+        style={{
+          flex: 1,
+          width: "100%",
+          maxWidth: "900px",
+          margin: "0 auto",
+          padding: "30px 25px",
+          boxSizing: "border-box",
+        }}
+      >
+        <div
+          style={{
+            background: "#0b0f14",
+            border: "1px solid #1f2937",
+            borderRadius: "20px",
+            padding: "25px",
+            minHeight: "500px",
+          }}
+        >
+          <p
+            style={{
+              color: "#6b7280",
+              fontSize: "13px",
+            }}
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            SYSTEM ONLINE
+          </p>
+
+          {messages.map((msg, index) => (
+            <div
+              key={index}
+              style={{
+                background:
+                  msg.role === "user"
+                    ? "#172033"
+                    : "#111827",
+                borderRadius: "15px",
+                padding: "15px 20px",
+                marginBottom: "15px",
+                marginLeft:
+                  msg.role === "user" ? "80px" : "0",
+                marginRight:
+                  msg.role === "assistant" ? "80px" : "0",
+              }}
+            >
+              <strong
+                style={{
+                  fontSize: "13px",
+                  letterSpacing: "1px",
+                }}
+              >
+                {msg.role === "user"
+                  ? "YOU"
+                  : "JARVIS"}
+              </strong>
+
+              <p
+                style={{
+                  color: "#d1d5db",
+                  lineHeight: "1.6",
+                  whiteSpace: "pre-wrap",
+                  marginBottom: 0,
+                }}
+              >
+                {msg.content}
+              </p>
+            </div>
+          ))}
+
+          {loading && (
+            <div
+              style={{
+                color: "#9ca3af",
+                padding: "10px",
+              }}
+            >
+              JARVIS is thinking...
+            </div>
+          )}
         </div>
-      </main>
-    </div>
+      </section>
+
+      {/* INPUT */}
+      <footer
+        style={{
+          padding: "20px 25px 30px",
+          borderTop: "1px solid #1f2937",
+        }}
+      >
+        <div
+          style={{
+            maxWidth: "900px",
+            margin: "0 auto",
+            display: "flex",
+            gap: "10px",
+          }}
+        >
+          <input
+            value={message}
+            onChange={(e) =>
+              setMessage(e.target.value)
+            }
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                sendMessage();
+              }
+            }}
+            placeholder="Talk to JARVIS..."
+            disabled={loading}
+            style={{
+              flex: 1,
+              padding: "17px 20px",
+              borderRadius: "12px",
+              border: "1px solid #374151",
+              background: "#111827",
+              color: "white",
+              fontSize: "16px",
+              outline: "none",
+            }}
+          />
+
+          <button
+            onClick={sendMessage}
+            disabled={loading}
+            style={{
+              padding: "0 25px",
+              borderRadius: "12px",
+              border: "none",
+              background: loading
+                ? "#6b7280"
+                : "white",
+              color: "black",
+              fontWeight: "bold",
+              cursor: loading
+                ? "not-allowed"
+                : "pointer",
+            }}
+          >
+            {loading ? "..." : "Send"}
+          </button>
+        </div>
+      </footer>
+    </main>
   );
 }
